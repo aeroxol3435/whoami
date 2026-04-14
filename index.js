@@ -22,7 +22,7 @@ function createBot() {
     host: 'play.royallsmp.fun',
     port: 25565,
     username: 'whoami',
-    version: 1.21.1 // auto detect
+    version: "1.21.1" // auto detect
   })
 
   // ===== WHEN SPAWNED =====
