@@ -1,23 +1,20 @@
 const mineflayer = require('mineflayer')
 const express = require('express')
 
-// ================= CONFIG =================
+// ========= CONFIG =========
 
 const config = {
-  host: 'play.royallsmp.fun',
+  host: 'play.royallsmp.fun',   // <-- change this
   port: 25565,
   username: 'whoami',
-  version: "1.21.1", // auto detect
-  loginPassword: 'alif123', // for cracked servers
+  version: "1.21.1",
   reconnectDelay: 10000
 }
-
-// ==========================================
 
 let bot
 let reconnecting = false
 
-// ========= EXPRESS UPTIME SERVER (RENDER) =========
+// ========= RENDER UPTIME SERVER =========
 
 const app = express()
 app.get('/', (req, res) => {
@@ -29,9 +26,10 @@ app.listen(PORT, () => {
   console.log(`🌐 Uptime server running on port ${PORT}`)
 })
 
-// ===================================================
+// ========= CREATE BOT FUNCTION =========
 
 function createBot() {
+
   console.log("🔄 Creating bot...")
 
   bot = mineflayer.createBot({
@@ -41,29 +39,31 @@ function createBot() {
     version: config.version
   })
 
-  // ================= BASIC EVENTS =================
+  // ===== LOGIN SUCCESS =====
+
+  bot.on('login', () => {
+    console.log("✅ Successfully connected to server!")
+  })
+
+  // ===== SPAWN EVENT =====
 
   bot.on('spawn', () => {
-  console.log("🌍 Spawned in world.")
+    console.log("🌍 Spawned in world.")
 
-  setTimeout(() => {
-    console.log("🔐 Sending login command...")
-    bot.chat("/login alif123")
-  }, 5000) // 5 seconds
-})
-  
-  // ================= CHAT LOGGER =================
-
-  bot.on('message', (jsonMsg) => {
-    const text = jsonMsg.toString()
-    console.log(`💬 [CHAT] ${text}`)
+    // Send login after 5 seconds
+    setTimeout(() => {
+      console.log("🔐 Sending /login alif123")
+      bot.chat("/login alif123")
+    }, 5000)
   })
+
+  // ===== CHAT LOGGER =====
 
   bot.on('messagestr', (message) => {
-    console.log(`💬 [PLAIN] ${message}`)
+    console.log("💬", message)
   })
 
-  // ================= KICK LOGGER =================
+  // ===== KICK LOGGER =====
 
   bot.on('kicked', (reason, loggedIn) => {
     console.log("🚨 BOT WAS KICKED!")
@@ -71,17 +71,16 @@ function createBot() {
 
     try {
       if (typeof reason === 'object') {
-        const parsed = parseKickReason(reason)
-        console.log("Kick reason (parsed):", parsed)
+        console.log("Kick reason:", JSON.stringify(reason))
       } else {
         console.log("Kick reason:", reason)
       }
-    } catch (err) {
+    } catch {
       console.log("Kick reason (raw):", reason)
     }
   })
 
-  // ================= DISCONNECT LOGGER =================
+  // ===== DISCONNECT LOGGER =====
 
   bot.on('end', (reason) => {
     console.log("❌ Disconnected from server.")
@@ -90,21 +89,11 @@ function createBot() {
   })
 
   bot.on('error', (err) => {
-    console.log("⚠️ Error occurred:")
-    console.log(err)
-  })
-
-  // ================= PACKET DEBUG =================
-
-  bot._client.on('packet', (data, meta) => {
-    if (meta.name === 'disconnect') {
-      console.log("📦 Server sent disconnect packet:")
-      console.log(data)
-    }
+    console.log("⚠️ Error:", err)
   })
 }
 
-// ================= RECONNECT SYSTEM =================
+// ========= RECONNECT SYSTEM =========
 
 function reconnect() {
   if (reconnecting) return
@@ -118,49 +107,6 @@ function reconnect() {
   }, config.reconnectDelay)
 }
 
-// ================= HUMAN BEHAVIOR =================
-
-function startHumanBehavior() {
-  console.log("🧍 Starting human simulation...")
-
-  setInterval(() => {
-    if (!bot.entity) return
-
-    // Random head movement
-    const yaw = Math.random() * Math.PI * 2
-    const pitch = (Math.random() - 0.5) * Math.PI / 4
-    bot.look(yaw, pitch, true)
-
-    // Random small movement
-    const move = Math.random()
-    if (move < 0.25) bot.setControlState('forward', true)
-    else if (move < 0.5) bot.setControlState('back', true)
-    else if (move < 0.75) bot.setControlState('left', true)
-    else bot.setControlState('right', true)
-
-    setTimeout(() => {
-      bot.clearControlStates()
-    }, 2000)
-
-  }, randomDelay(10000, 20000))
-}
-
-// ================= UTILITIES =================
-
-function parseKickReason(reason) {
-  if (reason.text) return reason.text
-
-  if (reason.extra) {
-    return reason.extra.map(e => e.text || '').join('')
-  }
-
-  return JSON.stringify(reason)
-}
-
-function randomDelay(min, max) {
-  return Math.floor(Math.random() * (max - min) + min)
-}
-
-// ================= START =================
+// ========= START =========
 
 createBot()
