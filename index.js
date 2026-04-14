@@ -1,15 +1,17 @@
 const mineflayer = require('mineflayer')
 const express = require('express')
 
-// ===== EXPRESS SERVER (UPTIME PING) =====
+// ===== EXPRESS SERVER (RENDER PORT FIX) =====
 const app = express()
+
+const PORT = process.env.PORT || 3000
 
 app.get('/', (req, res) => {
   res.send('Bot is running!')
 })
 
-app.listen(3000, () => {
-  console.log('Uptime server running on port 3000')
+app.listen(PORT, () => {
+  console.log(`Uptime server running on port ${PORT}`)
 })
 
 // ===== CREATE BOT =====
@@ -19,25 +21,25 @@ const bot = mineflayer.createBot({
   username: 'whoami'
 })
 
-// ===== WHEN BOT JOINS =====
+// ===== WHEN BOT SPAWNS =====
 bot.on('spawn', () => {
   console.log('Bot joined server!')
 
-  // Wait 5 seconds then login
+  // Wait 5 sec
   setTimeout(() => {
     bot.chat('/login alif123')
-    console.log('Logged in')
+    console.log('Login command sent.')
 
-    // Wait 3 seconds after login
+    // Wait 3 sec then AFK
     setTimeout(() => {
-      console.log('Now AFK forever...')
+      console.log('AFK mode started.')
       startAfk()
     }, 3000)
 
   }, 5000)
 })
 
-// ===== SIMPLE AFK SYSTEM =====
+// ===== SIMPLE SAFE AFK =====
 function startAfk() {
   setInterval(() => {
     bot.setControlState('jump', true)
@@ -46,32 +48,40 @@ function startAfk() {
       bot.setControlState('jump', false)
     }, 500)
 
-  }, 30000) // jump every 30 sec
+  }, 30000)
 }
 
-// ===== PRIVATE MESSAGE LISTENER =====
-bot.on('message', (jsonMsg) => {
-  const msg = jsonMsg.toString()
+// ===== PRIVATE MESSAGE LISTENER (FIXED) =====
+bot.on('messagestr', (message) => {
 
-  // Check if message contains private message format
   // Example format usually:
-  // [alifthepro123 -> you] hello
+  // alifthepro123 -> you: hello
+  // or
+  // [alifthepro123 -> whoami] hello
 
-  if (msg.includes('alifthepro123') && msg.includes('->')) {
+  if (message.includes('alifthepro123') && message.includes('->')) {
 
-    // Extract message text after ]
-    const split = msg.split('] ')
-    if (split.length > 1) {
-      const messageText = split[1]
+    // Extract message after colon
+    const parts = message.split(': ')
+    if (parts.length > 1) {
+      const msgText = parts.slice(1).join(': ')
 
-      console.log('Message from alifthepro123:', messageText)
+      console.log('PM from alifthepro123:', msgText)
 
-      // Reply with same text
-      bot.chat(messageText)
+      bot.chat(msgText)
     }
   }
+
 })
 
-// ===== ERROR HANDLING =====
-bot.on('kicked', console.log)
-bot.on('error', console.log)
+// ===== AUTO RECONNECT =====
+bot.on('end', () => {
+  console.log('Bot disconnected. Reconnecting in 10 seconds...')
+  setTimeout(() => {
+    process.exit(1) // Let Render restart it
+  }, 10000)
+})
+
+bot.on('error', err => {
+  console.log('Error:', err)
+})
