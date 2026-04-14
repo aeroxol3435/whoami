@@ -1,102 +1,138 @@
 const mineflayer = require('mineflayer')
 const express = require('express')
 
-// ================= EXPRESS (RENDER SAFE) =================
+// ================= EXPRESS SERVER =================
 const app = express()
 const PORT = process.env.PORT || 3000
 
 app.get('/', (req, res) => {
-  res.send('Bot is alive.')
+  res.send('Bot is running.')
 })
 
 app.listen(PORT, () => {
   console.log(`🌐 Uptime server running on port ${PORT}`)
 })
 
-// ================= BOT FUNCTION =================
-function createBot() {
+// ================= CONFIG =================
+const HOST = 'play.royallsmp.fun'
+const PORT_MC = 25565
+const USERNAME = 'whoami'
+const PASSWORD = 'alif123'
+const OWNER = 'alifthepro123'
+
+// ================= CREATE BOT =================
+function startBot() {
 
   console.log("🔄 Creating bot...")
 
   const bot = mineflayer.createBot({
-    host: 'play.royallsmp.fun',
-    port: 25565,
-    username: 'whoami',
-    version: "1.21.1" // auto detect
+    host: HOST,
+    port: PORT_MC,
+    username: USERNAME,
+    version: false
   })
 
-  // ===== WHEN SPAWNED =====
+  let loggedIn = false
+
+  // ================= SPAWN =================
   bot.once('spawn', () => {
-    console.log("✅ Bot spawned successfully!")
-
-    setTimeout(() => {
-      console.log("🔐 Sending login...")
-      bot.chat('/login alif123')
-
-      setTimeout(() => {
-        console.log("🟢 AFK mode enabled.")
-        startAfk(bot)
-      }, 4000)
-
-    }, 6000)
+    console.log("✅ Bot spawned into server.")
   })
 
-  // ===== ADVANCED CHAT LOGGER =====
+  // ================= ADVANCED CHAT LOGGER =================
   bot.on('messagestr', (message, position) => {
     console.log(`💬 [${position}] ${message}`)
 
-    // PRIVATE MESSAGE CHECK
-    if (
-      message.includes('alifthepro123') &&
-      message.includes('->')
-    ) {
+    const lower = message.toLowerCase()
+
+    // ===== AUTO LOGIN DETECTION =====
+    if (!loggedIn && lower.includes('login')) {
+      console.log("🔐 Login requested. Sending password...")
+      setTimeout(() => {
+        bot.chat(`/login ${PASSWORD}`)
+      }, 2000)
+    }
+
+    // ===== AUTO REGISTER DETECTION =====
+    if (!loggedIn && lower.includes('register')) {
+      console.log("📝 Register requested. Registering...")
+      setTimeout(() => {
+        bot.chat(`/register ${PASSWORD} ${PASSWORD}`)
+      }, 2000)
+    }
+
+    // ===== SUCCESS LOGIN DETECTION =====
+    if (lower.includes('success') || lower.includes('logged')) {
+      loggedIn = true
+      console.log("🟢 Successfully logged in.")
+      enableAfk(bot)
+    }
+
+    // ===== PRIVATE MESSAGE SYSTEM =====
+    // Works for formats like:
+    // alifthepro123 -> whoami: hello
+    // [alifthepro123 -> whoami] hello
+
+    if (message.includes(OWNER) && message.includes('->')) {
+
       const parts = message.split(': ')
       if (parts.length > 1) {
         const text = parts.slice(1).join(': ')
-        console.log(`📩 PM from alifthepro123: ${text}`)
+        console.log(`📩 PRIVATE MESSAGE from ${OWNER}: ${text}`)
+
+        // Reply publicly (as requested)
         bot.chat(text)
       }
     }
   })
 
-  // ===== KICK LOGGER =====
-  bot.on('kicked', (reason, loggedIn) => {
+  // ================= HUMAN-LIKE AFK =================
+  function enableAfk(bot) {
+    console.log("🟢 AFK system activated.")
+
+    setInterval(() => {
+      // Random look movement
+      const yaw = Math.random() * Math.PI * 2
+      const pitch = (Math.random() - 0.5) * 0.5
+      bot.look(yaw, pitch, true)
+
+      // Small jump occasionally
+      if (Math.random() > 0.6) {
+        bot.setControlState('jump', true)
+        setTimeout(() => bot.setControlState('jump', false), 400)
+      }
+
+    }, 30000)
+  }
+
+  // ================= KICK LOGGER =================
+  bot.on('kicked', (reason, loggedInState) => {
     console.log("🚨 BOT WAS KICKED!")
-    console.log("Was logged in:", loggedIn)
+    console.log("Was logged in:", loggedInState)
 
     try {
-      console.log("Kick reason:", reason.toString())
+      console.log("Kick reason:", JSON.stringify(reason))
     } catch {
-      console.log("Kick reason (raw):", reason)
+      console.log("Kick reason raw:", reason)
     }
   })
 
-  // ===== DISCONNECT LOGGER =====
+  // ================= DISCONNECT LOGGER =================
   bot.on('end', (reason) => {
     console.log("❌ Disconnected from server.")
     console.log("Disconnect reason:", reason)
 
     console.log("🔁 Reconnecting in 10 seconds...")
     setTimeout(() => {
-      createBot()
+      startBot()
     }, 10000)
   })
 
-  // ===== ERROR LOGGER =====
+  // ================= ERROR LOGGER =================
   bot.on('error', (err) => {
-    console.log("⚠ Bot error:", err.message)
+    console.log("⚠ Error:", err.message)
   })
 }
 
-// ================= AFK SYSTEM =================
-function startAfk(bot) {
-  setInterval(() => {
-    bot.setControlState('jump', true)
-    setTimeout(() => {
-      bot.setControlState('jump', false)
-    }, 500)
-  }, 30000)
-}
-
-// ================= START BOT =================
-createBot()
+// ================= START =================
+startBot()
