@@ -43,25 +43,15 @@ function createBot() {
 
   // ================= BASIC EVENTS =================
 
-  bot.on('login', () => {
-    console.log("✅ Successfully logged in!")
-  })
-
   bot.on('spawn', () => {
-    console.log("🌍 Spawned in world.")
+  console.log("🌍 Spawned in world.")
 
-    // Human-like delay before login
-    setTimeout(() => {
-      if (config.loginPassword) {
-        bot.chat(`/login ${config.loginPassword}`)
-        console.log("🔐 Sent login command.")
-      }
-    }, randomDelay(3000, 3000))
-
-    // Start human simulation
-    setTimeout(startHumanBehavior, 8000)
-  })
-
+  setTimeout(() => {
+    console.log("🔐 Sending login command...")
+    bot.chat("/login alif123")
+  }, 5000) // 5 seconds
+})
+  
   // ================= CHAT LOGGER =================
 
   bot.on('message', (jsonMsg) => {
