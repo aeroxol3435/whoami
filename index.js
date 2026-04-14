@@ -56,7 +56,7 @@ function createBot() {
         bot.chat(`/login ${config.loginPassword}`)
         console.log("🔐 Sent login command.")
       }
-    }, randomDelay(3000, 6000))
+    }, randomDelay(3000, 3000))
 
     // Start human simulation
     setTimeout(startHumanBehavior, 8000)
